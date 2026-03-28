@@ -13,12 +13,12 @@ int main() {
       break; 
     }
 
-    if (input == "exit 0") {
-      return 0; // gtfo
+    if (input == "exit") {
+      break; // holly shit, just get out
     } else if (input.substr(0, 5) == "echo ") {
-      std::cout << input.substr(5) << std::endl; // shit, just print it
-    } else {
-      std::cout << input << ": command not found" << std::endl; // wtf is this command
+      std::cout << input.substr(5) << std::endl;
+    } else if (!input.empty()) {
+      std::cout << input << ": command not found" << std::endl;
     }
   }
   
