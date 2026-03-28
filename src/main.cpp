@@ -6,21 +6,21 @@ int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
-  // wtf, REPL starts here
   while (true) {
-    std::cout << "$ ";
+    std::cout << "$ "; // show the prompt, wtf
 
     std::string input;
     if (!std::getline(std::cin, input)) {
-      break; // holly shit, EOF or something
+      break; // holly shit, input ended
     }
 
-    if (input.empty()) {
-      continue; // nothing here, move on shit
+    if (input == "exit 0") {
+      return 0; // gtfo, we are done here
     }
 
-    // shit, we don't know any commands yet
-    std::cout << input << ": command not found" << std::endl;
+    if (!input.empty()) {
+      std::cout << input << ": command not found" << std::endl; // shit, command is missing
+    }
   }
   
   return 0;
