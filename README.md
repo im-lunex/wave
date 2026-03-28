@@ -6,4 +6,4 @@ At its core, Wave is built for extensibility and reliability, featuring a robust
 
 ---
 
-**Made by [Lunex](https://github.com/im-lunex) driven by [CodeCrafters](https://codecrafters.io) 🛠️✨**
+Made by [Lunex](https://github.com/im-lunex) ⚡︎ driven by [CodeCrafters](https://codecrafters.io) ➤
