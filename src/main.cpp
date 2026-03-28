@@ -7,11 +7,15 @@ int main() {
   std::cerr << std::unitbuf;
 
   while (true) {
-    std::cout << "$ "; // print the fucking prompt
+    std::cout << "$ "; // show the prompt, wtf
 
     std::string input;
     if (!std::getline(std::cin, input)) {
       break; // holly shit, input ended
+    }
+
+    if (!input.empty()) {
+      std::cout << input << ": command not found" << std::endl; // shit, command is missing
     }
   }
   
