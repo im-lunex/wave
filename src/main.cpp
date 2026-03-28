@@ -2,27 +2,25 @@
 #include <string>
 
 int main() {
-	// Flush after every std::cout / std:cerr, ooowww maaa ga
-	std::cout << std::unitbuf;
-	std::cerr << std::unitbuf;
+  std::cout << std::unitbuf;
+  std::cerr << std::unitbuf;
 
-	while (true) {
-		std::cout << "$ "; // show the prompt, wtf
+  while (true) {
+    std::cout << "$ ";
 
-		std::string input;
-		if (!std::getline(std::cin, input)) {
-			break; // holly shit, input ended
-		}
+    std::string input;
+    if (!std::getline(std::cin, input)) {
+      break; 
+    }
 
-		if (input == "exit") {
-			return 0; // gtfo, we are done here
-		}
-
-		if (!input.empty()) {
-			std::cout << input << ": command not found"
-					  << std::endl; // shit, command is missing
-		}
-	}
-
-	return 0;
+    if (input == "exit 0") {
+      return 0; // gtfo
+    } else if (input.substr(0, 5) == "echo ") {
+      std::cout << input.substr(5) << std::endl; // shit, just print it
+    } else {
+      std::cout << input << ": command not found" << std::endl; // wtf is this command
+    }
+  }
+  
+  return 0;
 }
