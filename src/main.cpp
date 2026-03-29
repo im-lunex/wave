@@ -10,8 +10,8 @@
 
 namespace fs = std::filesystem;
 
-// split this shit into parts so we can find the fuckin commands
-std::vector<std::string> split_this_shit(const std::string &s) {
+// chop this shit up so we can see what the fuck is going on
+std::vector<std::string> chop_it(const std::string &s) {
 	std::vector<std::string> bits;
 	std::string bit;
 	std::istringstream ss(s);
@@ -20,8 +20,8 @@ std::vector<std::string> split_this_shit(const std::string &s) {
 	return bits;
 }
 
-// find where the fuck the program is hiding in the path maga
-std::string find_the_fuckin_path(const std::string &cmd) {
+// go find the fuckin binary in the path maga
+std::string find_it(const std::string &cmd) {
 	char *path_env = std::getenv("PATH");
 	if (!path_env)
 		return "";
@@ -36,7 +36,7 @@ std::string find_the_fuckin_path(const std::string &cmd) {
 }
 
 int main() {
-	// oooooo magic flush to make sure shit shows up
+	// oooooo magic flush so we dont get stuck in the pipe shit
 	std::cout << std::unitbuf;
 	std::cerr << std::unitbuf;
 
@@ -47,18 +47,17 @@ int main() {
 		std::cout << "$ ";
 		std::string input;
 		if (!std::getline(std::cin, input))
-			break; // user dipped holly shit
+			break; // user dipped fuck
 		if (input.empty())
 			continue;
 
-		auto args = split_this_shit(input);
+		auto args = chop_it(input);
 		if (args.empty())
 			continue;
 		std::string cmd = args[0];
 
-		if (cmd == "exit") {
-			return 0; // peace out
-		}
+		if (cmd == "exit")
+			return 0; // peace out bitch
 
 		if (cmd == "echo") {
 			for (size_t i = 1; i < args.size(); ++i) {
@@ -74,7 +73,7 @@ int main() {
 			if (builtins.count(args[1])) {
 				std::cout << args[1] << " is a shell builtin" << std::endl;
 			} else {
-				std::string p = find_the_fuckin_path(args[1]);
+				std::string p = find_it(args[1]);
 				if (!p.empty())
 					std::cout << args[1] << " is " << p << std::endl;
 				else
@@ -89,46 +88,42 @@ int main() {
 		}
 
 		if (cmd == "cd") {
-			std::string goal = (args.size() > 1) ? args[1] : "~";
-
-			// tilde expansion taking you back to the crib
-			if (goal == "~") {
-				if (char *home = std::getenv("HOME"))
-					goal = home;
-				else {
-					std::cerr << "cd home not set where the fuck are you"
-							  << std::endl;
-					continue;
-				}
+			std::string target;
+			// if no args or just a tilde go to the crib maga
+			if (args.size() < 2 || args[1] == "~") {
+				char *home = std::getenv("HOME");
+				if (home)
+					target = home;
+				else
+					continue; // home is ghosting us fuck
+			} else {
+				target = args[1];
 			}
 
 			std::error_code ec;
-			fs::current_path(
-				goal,
-				ec); // magic teleportation absolute or relative we dont care
+			fs::current_path(target, ec); // magic teleport to the destination
 			if (ec) {
-				// keep this shit exact or the tests will fuck us
-				std::cout << "cd: " << goal << ": No such file or directory"
+				// keep the error message exact or the tests will fuck us up
+				std::cout << "cd: " << target << ": No such file or directory"
 						  << std::endl;
 			}
 			continue;
 		}
 
-		// run some external shit if its not a builtin
-		std::string path = find_the_fuckin_path(cmd);
-		if (!path.empty()) {
+		// run some external shit if it isnt a builtin
+		std::string p = find_it(cmd);
+		if (!p.empty()) {
 			pid_t pid = fork();
 			if (pid == 0) {
 				std::vector<char *> c_args;
 				for (auto &a : args)
 					c_args.push_back(a.data());
 				c_args.push_back(nullptr);
-				execv(path.c_str(), c_args.data());
-				exit(1); // execv failed what the fuck
-			} else {
+				execv(p.c_str(), c_args.data());
+				exit(1); // what the fuck execv failed
+			} else
 				waitpid(pid, nullptr,
-						0); // wait for the kid to stop fuckin around
-			}
+						0); // wait for the kid to finish fuckin around
 		} else {
 			// command not found like my motivation maga
 			std::cout << cmd << ": command not found" << std::endl;
