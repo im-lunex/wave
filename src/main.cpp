@@ -63,7 +63,8 @@ int main() {
 			if (args.size() < 2)
 				continue;
 			std::string arg = args[1];
-			if (arg == "exit" || arg == "echo" || arg == "type") {
+			if (arg == "exit" || arg == "echo" || arg == "type" ||
+				arg == "pwd") {
 				std::cout << arg << " is a shell builtin" << std::endl;
 			} else {
 				std::string path = find_path(arg);
@@ -73,6 +74,9 @@ int main() {
 					std::cout << arg << ": not found" << std::endl;
 				}
 			}
+		} else if (cmd == "pwd") {
+			std::cout << fs::current_path().string()
+					  << std::endl; // HEHE,, MAGIC..
 		} else {
 			std::string path = find_path(cmd);
 			if (!path.empty()) {
