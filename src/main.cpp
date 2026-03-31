@@ -10,7 +10,6 @@
 
 namespace fs = std::filesystem;
 
-// chop this shit up so we can see what the fuck is going on
 std::vector<std::string> chop_it(const std::string &s) {
 	std::vector<std::string> bits;
 	std::string bit;
@@ -20,7 +19,6 @@ std::vector<std::string> chop_it(const std::string &s) {
 	return bits;
 }
 
-// go find the fuckin binary in the path maga
 std::string find_it(const std::string &cmd) {
 	char *path_env = std::getenv("PATH");
 	if (!path_env)
@@ -36,18 +34,18 @@ std::string find_it(const std::string &cmd) {
 }
 
 int main() {
-	// oooooo magic flush so we dont get stuck in the pipe shit
 	std::cout << std::unitbuf;
 	std::cerr << std::unitbuf;
 
-	const std::unordered_set<std::string> builtins = {"exit", "echo", "type",
-													  "pwd", "cd"};
+	const std::unordered_set<std::string> builtins = {
+		"exit", "echo", "type", "jobs", "pwd", "cd",
+	};
 
 	while (true) {
 		std::cout << "$ ";
 		std::string input;
 		if (!std::getline(std::cin, input))
-			break; // user dipped fuck
+			break; // user dipped wow magic
 		if (input.empty())
 			continue;
 
@@ -57,7 +55,7 @@ int main() {
 		std::string cmd = args[0];
 
 		if (cmd == "exit")
-			return 0; // peace out bitch
+			return 0; // but why??
 
 		if (cmd == "echo") {
 			for (size_t i = 1; i < args.size(); ++i) {
@@ -89,28 +87,29 @@ int main() {
 
 		if (cmd == "cd") {
 			std::string target;
-			// if no args or just a tilde go to the crib maga
 			if (args.size() < 2 || args[1] == "~") {
 				char *home = std::getenv("HOME");
 				if (home)
 					target = home;
 				else
-					continue; // home is ghosting us fuck
+					continue;
 			} else {
 				target = args[1];
 			}
 
 			std::error_code ec;
-			fs::current_path(target, ec); // magic teleport to the destination
+			fs::current_path(target, ec);
 			if (ec) {
-				// keep the error message exact or the tests will fuck us up
 				std::cout << "cd: " << target << ": No such file or directory"
 						  << std::endl;
 			}
 			continue;
 		}
 
-		// run some external shit if it isnt a builtin
+		if (cmd == "jobs") {
+			continue;
+		}
+
 		std::string p = find_it(cmd);
 		if (!p.empty()) {
 			pid_t pid = fork();
@@ -120,12 +119,10 @@ int main() {
 					c_args.push_back(a.data());
 				c_args.push_back(nullptr);
 				execv(p.c_str(), c_args.data());
-				exit(1); // what the fuck execv failed
+				exit(1);
 			} else
-				waitpid(pid, nullptr,
-						0); // wait for the kid to finish fuckin around
+				waitpid(pid, nullptr, 0);
 		} else {
-			// command not found like my motivation maga
 			std::cout << cmd << ": command not found" << std::endl;
 		}
 	}
