@@ -36,10 +36,36 @@ std::vector<std::string> chop_it(const std::string &s) {
 			bit += c;
 			is_escaped = false;
 			started = true;
-		} else if (c == '\\' && !in_single_quote && !in_double_quote) {
-			is_escaped = true;
-			started = true;
-		} else if (c == '\'' && !in_double_quote) {
+			continue;
+		}
+
+		if (c == '\\') {
+			if (in_single_quote) {
+				bit += c;
+				started = true;
+			} else if (in_double_quote) {
+				// in double quotes, backslash only escapes specific chars
+				if (i + 1 < s.length()) {
+					char next = s[i + 1];
+					if (next == '$' || next == '`' || next == '"' ||
+						next == '\\' || next == '\n') {
+						is_escaped = true;
+					} else {
+						bit += c;
+					}
+					started = true;
+				} else {
+					bit += c;
+					started = true;
+				}
+			} else {
+				is_escaped = true;
+				started = true;
+			}
+			continue;
+		}
+
+		if (c == '\'' && !in_double_quote) {
 			in_single_quote = !in_single_quote;
 			started = true;
 		} else if (c == '"' && !in_single_quote) {
