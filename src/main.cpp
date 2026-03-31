@@ -90,8 +90,16 @@ std::vector<std::string> chop_it(const std::string &s) {
 	return bits;
 }
 
-// check PATH for the executable
+// check PATH for the executable or run it directly if it's a path
 std::string find_it(const std::string &cmd) {
+	// if it has a slash, it's a direct path, don't look in PATH
+	if (cmd.find('/') != std::string::npos) {
+		if (fs::exists(cmd) && access(cmd.c_str(), X_OK) == 0) {
+			return cmd;
+		}
+		return "";
+	}
+
 	char *path_env = std::getenv("PATH");
 	if (!path_env)
 		return "";
