@@ -22,20 +22,24 @@ struct Job {
 std::vector<Job> active_jobs;
 int next_job_id = 1;
 
-// better helper to split string into tokens, handling single quotes
+// better helper to split string into tokens, handling single and double quotes
 std::vector<std::string> chop_it(const std::string &s) {
 	std::vector<std::string> bits;
 	std::string bit;
 	bool in_single_quote = false;
+	bool in_double_quote = false;
 	bool started = false;
 
 	for (size_t i = 0; i < s.length(); ++i) {
 		char c = s[i];
 
-		if (c == '\'') {
+		if (c == '\'' && !in_double_quote) {
 			in_single_quote = !in_single_quote;
 			started = true;
-		} else if (std::isspace(c) && !in_single_quote) {
+		} else if (c == '"' && !in_single_quote) {
+			in_double_quote = !in_double_quote;
+			started = true;
+		} else if (std::isspace(c) && !in_single_quote && !in_double_quote) {
 			if (started) {
 				bits.push_back(bit);
 				bit.clear();
@@ -115,8 +119,8 @@ int main() {
 			is_background = true;
 			args.pop_back();
 
-			// clean up the input string for display purposes by finding the LAST actual &
-			// that was treated as a token (not inside quotes)
+			// clean up the input string for display purposes by finding the
+			// LAST actual & that was treated as a token (not inside quotes)
 			size_t last_amp = input.find_last_of('&');
 			if (last_amp != std::string::npos) {
 				std::string test_input = input.substr(0, last_amp);
