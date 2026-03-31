@@ -5,4 +5,4 @@ This project is a functional shell implementation that handles core builtins lik
 **Made by Lunex**  
 *Driven by CodeCrafters*
 
-**Project Status:** Currently 20% done. This project will be continued in the future.
+**still under progress activly working on this**
