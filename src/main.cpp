@@ -22,13 +22,35 @@ struct Job {
 std::vector<Job> active_jobs;
 int next_job_id = 1;
 
-// simple helper to split string into tokens by whitespace
+// better helper to split string into tokens, handling single quotes
 std::vector<std::string> chop_it(const std::string &s) {
 	std::vector<std::string> bits;
 	std::string bit;
-	std::istringstream ss(s);
-	while (ss >> bit)
+	bool in_single_quote = false;
+	bool started = false;
+
+	for (size_t i = 0; i < s.length(); ++i) {
+		char c = s[i];
+
+		if (c == '\'') {
+			in_single_quote = !in_single_quote;
+			started = true;
+		} else if (std::isspace(c) && !in_single_quote) {
+			if (started) {
+				bits.push_back(bit);
+				bit.clear();
+				started = false;
+			}
+		} else {
+			bit += c;
+			started = true;
+		}
+	}
+
+	if (started) {
 		bits.push_back(bit);
+	}
+
 	return bits;
 }
 
@@ -62,12 +84,14 @@ int main() {
 
 		// check for finished background jobs so they don't turn into zombies
 		while ((finished_pid = waitpid(-1, &status, WNOHANG)) > 0) {
-			for (auto it = active_jobs.begin(); it != active_jobs.end(); ++it) {
+			for (auto it = active_jobs.begin(); it != active_jobs.end();) {
 				if (it->pid == finished_pid) {
 					std::cout << "[" << it->id << "]+ Done " << it->command
 							  << std::endl;
+					it = active_jobs.erase(it);
 					active_jobs.erase(it);
-					break;
+				} else {
+					++it;
 				}
 			}
 		}
@@ -85,18 +109,24 @@ int main() {
 		std::string cmd = args[0];
 
 		// check if they appended & to run it in the background
+		// we check the last token specifically
 		bool is_background = false;
 		if (args.back() == "&") {
 			is_background = true;
 			args.pop_back();
 
-			// clean up the input string for display purposes
+			// clean up the input string for display purposes by finding the LAST actual &
+			// that was treated as a token (not inside quotes)
 			size_t last_amp = input.find_last_of('&');
 			if (last_amp != std::string::npos) {
-				input = input.substr(0, last_amp);
-				size_t last = input.find_last_not_of(" \t");
-				if (last != std::string::npos) {
-					input = input.substr(0, last + 1);
+				std::string test_input = input.substr(0, last_amp);
+				// double check if removing this & still gives us the same args
+				if (chop_it(test_input) == args) {
+					input = test_input;
+					size_t last = input.find_last_not_of(" \t");
+					if (last != std::string::npos) {
+						input = input.substr(0, last + 1);
+					}
 				}
 			}
 		}
