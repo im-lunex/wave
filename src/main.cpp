@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <sys/wait.h>
@@ -10,6 +11,18 @@
 
 namespace fs = std::filesystem;
 
+// keep track of background tasks
+struct Job {
+	int id;
+	pid_t pid;
+	std::string command;
+};
+
+// global list for our active background jobs
+std::vector<Job> active_jobs;
+int next_job_id = 1;
+
+// simple helper to split string into tokens by whitespace
 std::vector<std::string> chop_it(const std::string &s) {
 	std::vector<std::string> bits;
 	std::string bit;
@@ -19,6 +32,7 @@ std::vector<std::string> chop_it(const std::string &s) {
 	return bits;
 }
 
+// look through system PATH to find where an executable lives
 std::string find_it(const std::string &cmd) {
 	char *path_env = std::getenv("PATH");
 	if (!path_env)
@@ -34,6 +48,7 @@ std::string find_it(const std::string &cmd) {
 }
 
 int main() {
+	// make sure output shows up immediately
 	std::cout << std::unitbuf;
 	std::cerr << std::unitbuf;
 
@@ -42,10 +57,25 @@ int main() {
 	};
 
 	while (true) {
+		int status;
+		pid_t finished_pid;
+
+		// check for finished background jobs so they don't turn into zombies
+		while ((finished_pid = waitpid(-1, &status, WNOHANG)) > 0) {
+			for (auto it = active_jobs.begin(); it != active_jobs.end(); ++it) {
+				if (it->pid == finished_pid) {
+					std::cout << "[" << it->id << "]+ Done " << it->command
+							  << std::endl;
+					active_jobs.erase(it);
+					break;
+				}
+			}
+		}
+
 		std::cout << "$ ";
 		std::string input;
 		if (!std::getline(std::cin, input))
-			break; // user dipped wow magic
+			break; // user hit ctrl-d or something
 		if (input.empty())
 			continue;
 
@@ -54,8 +84,25 @@ int main() {
 			continue;
 		std::string cmd = args[0];
 
+		// check if they appended & to run it in the background
+		bool is_background = false;
+		if (args.back() == "&") {
+			is_background = true;
+			args.pop_back();
+
+			// clean up the input string for display purposes
+			size_t last_amp = input.find_last_of('&');
+			if (last_amp != std::string::npos) {
+				input = input.substr(0, last_amp);
+				size_t last = input.find_last_not_of(" \t");
+				if (last != std::string::npos) {
+					input = input.substr(0, last + 1);
+				}
+			}
+		}
+
 		if (cmd == "exit")
-			return 0; // but why??
+			return 0;
 
 		if (cmd == "echo") {
 			for (size_t i = 1; i < args.size(); ++i) {
@@ -87,6 +134,7 @@ int main() {
 
 		if (cmd == "cd") {
 			std::string target;
+			// handle ~ for home directory
 			if (args.size() < 2 || args[1] == "~") {
 				char *home = std::getenv("HOME");
 				if (home)
@@ -107,21 +155,34 @@ int main() {
 		}
 
 		if (cmd == "jobs") {
+			for (const auto &job : active_jobs) {
+				std::cout << "[" << job.id << "] " << job.pid << " "
+						  << job.command << std::endl;
+			}
 			continue;
 		}
 
+		// check if it's an external program
 		std::string p = find_it(cmd);
 		if (!p.empty()) {
 			pid_t pid = fork();
 			if (pid == 0) {
+				// child process: prepare args and run the thing
 				std::vector<char *> c_args;
 				for (auto &a : args)
 					c_args.push_back(a.data());
 				c_args.push_back(nullptr);
 				execv(p.c_str(), c_args.data());
 				exit(1);
-			} else
+			} else if (is_background) {
+				// parent: if bg, just save info and move on
+				active_jobs.push_back({next_job_id, pid, input});
+				std::cout << "[" << next_job_id << "] " << pid << std::endl;
+				next_job_id++;
+			} else {
+				// parent: wait for it to finish if it's a foreground task
 				waitpid(pid, nullptr, 0);
+			}
 		} else {
 			std::cout << cmd << ": command not found" << std::endl;
 		}
